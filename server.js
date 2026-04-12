@@ -1,76 +1,54 @@
 const express = require("express");
 const mysql = require("mysql2");
-const bodyParser = require("body-parser");
-const path = require("path");
-
+const cors = require("cors");
 const app = express();
+app.use(cors());
+app.use(express.json());
 
-// Middleware to parse form data
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-// Serve static files (CSS, JS, images) from your project folder
-app.use(express.static(path.join(__dirname, 'public')));
-
-// ================= DATABASE CONNECTION =================
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "",        // XAMPP default
-  database: "drcoffee",
-  port: 3306           // change to 3307 ONLY if MySQL uses 3307
+  password: "Anuja@2005",
+  database: "coffee"
 });
 
-// Connect to database
 db.connect(err => {
   if (err) {
-    console.error("❌ Database connection failed");
-    console.error(err);
-    return;
+    console.log("DB Error:", err);
+  } else {
+    console.log("MySQL Connected");
   }
-  console.log("✅ Database connected");
 });
 
-// ================= SERVE HTML PAGE =================
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+app.post("/reserve", (req, res) => {
+  const { name, email, contact, table_no, date } = req.body;
+
+  const sql = "INSERT INTO reservations (name, email, contact, table_no, date) VALUES (?, ?, ?, ?, ?)";
+
+db.query(sql, [name, email, contact, table_no, date], (err) => {
+  if (err) {
+    console.log("FULL ERROR:", err);
+    return res.send("Error ");
+  }
+  res.send("Booking Successful ");
+});
 });
 
-// ================= BOOK TABLE ROUTE =================
-app.post("/book-table", (req, res) => {
-  console.log("📩 Form data received:", req.body);
-de
-  const { firstName, lastName, email, phone, date } = req.body;
+app.listen(5000, () => {
+  console.log("Server running on port 5000 ");
+});
+app.post("/order", (req, res) => {
+  const { items, total } = req.body;
 
-  // Validation
-  if (!firstName || !lastName || !email || !phone || !date) {
-    return res.status(400).send("All fields are required");
-  }
+  console.log("DATA RECEIVED:", items, total); 
 
-  const sql = `
-    INSERT INTO bookings 
-    (first_name, last_name, email, phone, booking_date)
-    VALUES (?, ?, ?, ?, ?)
-  `;
+  const sql = "INSERT INTO orders (items, total) VALUES (?, ?)";
 
-  db.query(sql, [firstName, lastName, email, phone, date], (err, result) => {
+  db.query(sql, [items, total], (err) => {
     if (err) {
-      console.error("❌ Error inserting data:", err);
-      return res.status(500).send("Error saving data");
+      console.log("SQL ERROR:", err);
+      return res.send("Error");
     }
-
-    console.log("✅ Data inserted, ID:", result.insertId);
-    
-  
-   
+      res.send("Order Placed");
   });
 });
-
-// ================= START SERVER =================
-app.listen(3000, () => {
-  console.log("🚀 Server running on http://localhost:3000");
-  console.log("📝 Visit: http://localhost:3000");
-});
-
-
-
